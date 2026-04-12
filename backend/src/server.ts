@@ -1,21 +1,42 @@
-import express, { Application, Request, Response } from 'express';
-import cors from 'cors';
 import dotenv from 'dotenv';
+import mongoose from 'mongoose';
+import jwt from 'jsonwebtoken';
+import { ApolloServer } from '@apollo/server';
+import { startStandaloneServer } from '@apollo/server/standalone';
+import { typeDefs } from './schemas/schema';
+import { resolvers } from './resolvers/resolvers';
 
 dotenv.config();
 
-const app: Application = express();
-const PORT = process.env.PORT || 8000;
+const PORT = Number(process.env.PORT) || 8000;
+const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/assignment2';
+const JWT_SECRET = process.env.JWT_SECRET || 'ebaldin';
 
-app.use(cors());
-app.use(express.json());
+interface Context {
+  userId?: string;
+}
 
-app.get('/', (_req: Request, res: Response) => {
-  res.status(200).json({ message: 'Server is running' });
-});
+async function start() {
+  await mongoose.connect(MONGODB_URI);
+  console.log('Connected to MongoDB');
 
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-});
+  const server = new ApolloServer<Context>({ typeDefs, resolvers });
 
-export default app;
+  const { url } = await startStandaloneServer(server, {
+    listen: { port: PORT },
+    context: async ({ req }) => {
+      const token = (req.headers.authorization || '').replace('Bearer ', '');
+      if (!token) return {};
+      try {
+        const { userId } = jwt.verify(token, JWT_SECRET) as { userId: string };
+        return { userId };
+      } catch {
+        return {};
+      }
+    },
+  });
+
+  console.log(`GraphQL ready at ${url}`);
+}
+
+start().catch(console.error);
