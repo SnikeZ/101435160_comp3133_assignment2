@@ -60,6 +60,34 @@ const ADD_EMPLOYEE = gql`
   }
 `;
 
+const UPDATE_EMPLOYEE = gql`
+  mutation UpdateEmployee(
+    $id: ID!
+    $first_name: String
+    $last_name: String
+    $email: String
+    $gender: String
+    $designation: String
+    $salary: Float
+    $date_of_joining: Date
+    $department: String
+    $employee_photo: String
+  ) {
+    updateEmployee(
+      id: $id
+      first_name: $first_name
+      last_name: $last_name
+      email: $email
+      gender: $gender
+      designation: $designation
+      salary: $salary
+      date_of_joining: $date_of_joining
+      department: $department
+      employee_photo: $employee_photo
+    ) { ${EMPLOYEE_FIELDS} }
+  }
+`;
+
 export interface AddEmployeeInput {
   first_name: string;
   last_name: string;
@@ -70,6 +98,16 @@ export interface AddEmployeeInput {
   date_of_joining: Date;
   department: string;
   employee_photo?: string;
+}
+
+const DELETE_EMPLOYEE = gql`
+  mutation DeleteEmployee($id: ID!) {
+    deleteEmployee(id: $id)
+  }
+`;
+
+export interface UpdateEmployeeInput extends Partial<AddEmployeeInput> {
+  id: string;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -92,5 +130,23 @@ export class EmployeeService {
         variables: input,
       })
       .pipe(map((res) => res.data!.addEmployee));
+  }
+
+  updateEmployee(input: UpdateEmployeeInput) {
+    return this.apollo
+      .mutate<{ updateEmployee: Employee }>({
+        mutation: UPDATE_EMPLOYEE,
+        variables: input,
+      })
+      .pipe(map((res) => res.data!.updateEmployee));
+  }
+
+  deleteEmployee(id: string) {
+    return this.apollo
+      .mutate<{ deleteEmployee: boolean }>({
+        mutation: DELETE_EMPLOYEE,
+        variables: { id },
+      })
+      .pipe(map((res) => res.data!.deleteEmployee));
   }
 }

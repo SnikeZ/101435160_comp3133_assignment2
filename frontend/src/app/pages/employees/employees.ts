@@ -9,6 +9,8 @@ import { IconField } from 'primeng/iconfield';
 import { InputIcon } from 'primeng/inputicon';
 import { InputText } from 'primeng/inputtext';
 import { Dialog } from 'primeng/dialog';
+import { ConfirmDialog } from 'primeng/confirmdialog';
+import { ConfirmationService } from 'primeng/api';
 import { Select } from 'primeng/select';
 import { InputNumber } from 'primeng/inputnumber';
 import { DatePicker } from 'primeng/datepicker';
@@ -20,8 +22,9 @@ import { EmployeeService, Employee } from '../../services/employee.service';
   imports: [
     TableModule, Button, Tag, IconField, InputIcon, InputText,
     CurrencyPipe, DatePipe, ReactiveFormsModule,
-    Dialog, Select, InputNumber, DatePicker,
+    Dialog, ConfirmDialog, Select, InputNumber, DatePicker,
   ],
+  providers: [ConfirmationService],
   templateUrl: './employees.html',
   styleUrl: './employees.css',
 })
@@ -30,6 +33,7 @@ export class EmployeesComponent implements OnInit {
   private employeeService = inject(EmployeeService);
   private router = inject(Router);
   private fb = inject(FormBuilder);
+  private confirmationService = inject(ConfirmationService);
 
   // Table state
   employees = signal<Employee[]>([]);
@@ -38,6 +42,8 @@ export class EmployeesComponent implements OnInit {
 
   // Dialog state
   dialogVisible = signal(false);
+  dialogMode = signal<'add' | 'edit'>('add');
+  editingId = signal<string | null>(null);
   submitting = signal(false);
   imagePreview = signal<string | null>(null);
   formError = signal('');
@@ -75,10 +81,54 @@ export class EmployeesComponent implements OnInit {
   }
 
   openAddDialog() {
+    this.dialogMode.set('add');
+    this.editingId.set(null);
     this.form.reset();
     this.imagePreview.set(null);
     this.formError.set('');
     this.dialogVisible.set(true);
+  }
+
+  openEditDialog(employee: Employee) {
+    this.dialogMode.set('edit');
+    this.editingId.set(employee.id);
+    this.formError.set('');
+
+    const dateOfJoining = employee.date_of_joining ? new Date(employee.date_of_joining) : null;
+
+    this.form.setValue({
+      first_name: employee.first_name ?? '',
+      last_name: employee.last_name ?? '',
+      email: employee.email ?? '',
+      gender: employee.gender ?? '',
+      designation: employee.designation ?? '',
+      salary: employee.salary ?? null,
+      date_of_joining: dateOfJoining,
+      department: employee.department ?? '',
+      employee_photo: employee.employee_photo ?? null,
+    });
+
+    this.imagePreview.set(employee.employee_photo ?? null);
+    this.dialogVisible.set(true);
+  }
+
+  confirmDelete(employee: Employee) {
+    this.confirmationService.confirm({
+      message: `Delete ${employee.first_name ?? ''} ${employee.last_name ?? ''}? This cannot be undone.`,
+      header: 'Confirm Delete',
+      icon: 'pi pi-exclamation-triangle',
+      acceptButtonStyleClass: 'p-button-danger',
+      accept: () => {
+        this.employeeService.deleteEmployee(employee.id).subscribe({
+          next: () => {
+            this.employees.update((list) => list.filter((e) => e.id !== employee.id));
+          },
+          error: (err) => {
+            this.error.set(err.graphQLErrors?.[0]?.message ?? 'Failed to delete employee');
+          },
+        });
+      },
+    });
   }
 
   onImageSelect(event: Event) {
@@ -103,27 +153,55 @@ export class EmployeesComponent implements OnInit {
     this.formError.set('');
 
     const v = this.form.value;
-    this.employeeService.addEmployee({
-      first_name: v.first_name!,
-      last_name: v.last_name!,
-      email: v.email!,
-      gender: v.gender!,
-      designation: v.designation!,
-      salary: v.salary!,
-      date_of_joining: v.date_of_joining!,
-      department: v.department!,
-      employee_photo: v.employee_photo ?? undefined,
-    }).subscribe({
-      next: (employee) => {
-        this.employees.update((list) => [...list, employee]);
-        this.dialogVisible.set(false);
-        this.submitting.set(false);
-      },
-      error: (err) => {
-        this.formError.set(err.graphQLErrors?.[0]?.message ?? 'Failed to add employee');
-        this.submitting.set(false);
-      },
-    });
+
+    if (this.dialogMode() === 'edit') {
+      this.employeeService.updateEmployee({
+        id: this.editingId()!,
+        first_name: v.first_name!,
+        last_name: v.last_name!,
+        email: v.email!,
+        gender: v.gender!,
+        designation: v.designation!,
+        salary: v.salary!,
+        date_of_joining: v.date_of_joining!,
+        department: v.department!,
+        employee_photo: v.employee_photo ?? undefined,
+      }).subscribe({
+        next: (updated) => {
+          this.employees.update((list) =>
+            list.map((e) => (e.id === updated.id ? updated : e))
+          );
+          this.dialogVisible.set(false);
+          this.submitting.set(false);
+        },
+        error: (err) => {
+          this.formError.set(err.graphQLErrors?.[0]?.message ?? 'Failed to update employee');
+          this.submitting.set(false);
+        },
+      });
+    } else {
+      this.employeeService.addEmployee({
+        first_name: v.first_name!,
+        last_name: v.last_name!,
+        email: v.email!,
+        gender: v.gender!,
+        designation: v.designation!,
+        salary: v.salary!,
+        date_of_joining: v.date_of_joining!,
+        department: v.department!,
+        employee_photo: v.employee_photo ?? undefined,
+      }).subscribe({
+        next: (employee) => {
+          this.employees.update((list) => [...list, employee]);
+          this.dialogVisible.set(false);
+          this.submitting.set(false);
+        },
+        error: (err) => {
+          this.formError.set(err.graphQLErrors?.[0]?.message ?? 'Failed to add employee');
+          this.submitting.set(false);
+        },
+      });
+    }
   }
 
   isInvalid(field: string) {

@@ -47,6 +47,7 @@
           <th pSortableColumn="designation">Designation <p-sortIcon field="designation" /></th>
           <th pSortableColumn="salary">Salary <p-sortIcon field="salary" /></th>
           <th pSortableColumn="date_of_joining">Joined <p-sortIcon field="date_of_joining" /></th>
+          <th style="width:160px"></th>
         </tr>
       </ng-template>
 
@@ -76,21 +77,31 @@
           <td>{{ employee.designation ?? '—' }}</td>
           <td>{{ employee.salary != null ? (employee.salary | currency) : '—' }}</td>
           <td>{{ employee.date_of_joining ? (employee.date_of_joining | date: 'mediumDate') : '—' }}</td>
+          <td>
+            <div class="flex gap-2">
+              <p-button label="Edit" icon="pi pi-pencil" size="small" severity="info"
+                [outlined]="true" (onClick)="openEditDialog(employee)" />
+              <p-button label="Delete" icon="pi pi-trash" size="small" severity="danger"
+                [outlined]="true" (onClick)="confirmDelete(employee)" />
+            </div>
+          </td>
         </tr>
       </ng-template>
 
       <ng-template pTemplate="emptymessage">
         <tr>
-          <td colspan="9" class="text-center py-8 text-surface-500">No employees found.</td>
+          <td colspan="10" class="text-center py-8 text-surface-500">No employees found.</td>
         </tr>
       </ng-template>
     </p-table>
   </div>
 </div>
 
-<!-- Add Employee Dialog -->
+<p-confirmdialog />
+
+<!-- Add / Edit Employee Dialog -->
 <p-dialog
-  header="Add Employee"
+  [header]="dialogMode() === 'edit' ? 'Edit Employee' : 'Add Employee'"
   [visible]="dialogVisible()"
   (visibleChange)="dialogVisible.set($event)"
   [modal]="true"
