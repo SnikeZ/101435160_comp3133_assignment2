@@ -100,6 +100,12 @@ export interface AddEmployeeInput {
   employee_photo?: string;
 }
 
+const SEARCH_EMPLOYEES = gql`
+  query SearchEmployees($department: String, $designation: String) {
+    searchEmployees(department: $department, designation: $designation) { ${EMPLOYEE_FIELDS} }
+  }
+`;
+
 const DELETE_EMPLOYEE = gql`
   mutation DeleteEmployee($id: ID!) {
     deleteEmployee(id: $id)
@@ -139,6 +145,16 @@ export class EmployeeService {
         variables: input,
       })
       .pipe(map((res) => res.data!.updateEmployee));
+  }
+
+  searchEmployees(department?: string, designation?: string) {
+    return this.apollo
+      .query<{ searchEmployees: Employee[] }>({
+        query: SEARCH_EMPLOYEES,
+        variables: { department: department || null, designation: designation || null },
+        fetchPolicy: 'network-only',
+      })
+      .pipe(map((res) => res.data!.searchEmployees));
   }
 
   deleteEmployee(id: string) {

@@ -40,6 +40,38 @@ export class EmployeesComponent implements OnInit {
   loading = signal(true);
   error = signal('');
 
+  // Search state
+  searchDepartment = signal('');
+  searchDesignation = signal('');
+
+  onSearch() {
+    const dept = this.searchDepartment().trim() || undefined;
+    const desig = this.searchDesignation().trim() || undefined;
+    this.loading.set(true);
+    this.error.set('');
+    this.employeeService.searchEmployees(dept, desig).subscribe({
+      next: (data) => { this.employees.set(data); this.loading.set(false); },
+      error: (err) => {
+        this.error.set(err.graphQLErrors?.[0]?.message ?? 'Search failed');
+        this.loading.set(false);
+      },
+    });
+  }
+
+  clearSearch() {
+    this.searchDepartment.set('');
+    this.searchDesignation.set('');
+    this.loading.set(true);
+    this.error.set('');
+    this.employeeService.getEmployees().subscribe({
+      next: (data) => { this.employees.set(data); this.loading.set(false); },
+      error: (err) => {
+        this.error.set(err.graphQLErrors?.[0]?.message ?? 'Failed to load employees');
+        this.loading.set(false);
+      },
+    });
+  }
+
   // Dialog state
   dialogVisible = signal(false);
   dialogMode = signal<'add' | 'edit'>('add');

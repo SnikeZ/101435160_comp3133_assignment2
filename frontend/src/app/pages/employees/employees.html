@@ -12,6 +12,26 @@
     <div class="mb-4 p-4 bg-red-100 text-red-700 rounded-lg">{{ error() }}</div>
   }
 
+  <!-- Search -->
+  <div class="card shadow-sm mb-4 flex flex-wrap items-end gap-3">
+    <div class="flex flex-col gap-1 flex-1 min-w-40">
+      <label class="text-sm font-medium text-surface-700">Department</label>
+      <input pInputText placeholder="e.g. Engineering"
+        [value]="searchDepartment()"
+        (input)="searchDepartment.set($any($event.target).value)" />
+    </div>
+    <div class="flex flex-col gap-1 flex-1 min-w-40">
+      <label class="text-sm font-medium text-surface-700">Position / Designation</label>
+      <input pInputText placeholder="e.g. Software Engineer"
+        [value]="searchDesignation()"
+        (input)="searchDesignation.set($any($event.target).value)" />
+    </div>
+    <div class="flex gap-2">
+      <p-button label="Search" icon="pi pi-search" (onClick)="onSearch()" />
+      <p-button label="Clear" icon="pi pi-times" severity="secondary" (onClick)="clearSearch()" />
+    </div>
+  </div>
+
   <!-- Table -->
   <div class="card shadow-sm">
     <p-table
