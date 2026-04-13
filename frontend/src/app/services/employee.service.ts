@@ -15,22 +15,62 @@ export interface Employee {
   employee_photo?: string | null;
 }
 
+const EMPLOYEE_FIELDS = `
+  id
+  first_name
+  last_name
+  email
+  gender
+  designation
+  salary
+  date_of_joining
+  department
+  employee_photo
+`;
+
 const GET_EMPLOYEES = gql`
   query GetEmployees {
-    getEmployees {
-      id
-      first_name
-      last_name
-      email
-      gender
-      designation
-      salary
-      date_of_joining
-      department
-      employee_photo
-    }
+    getEmployees { ${EMPLOYEE_FIELDS} }
   }
 `;
+
+const ADD_EMPLOYEE = gql`
+  mutation AddEmployee(
+    $first_name: String!
+    $last_name: String!
+    $email: String!
+    $gender: String!
+    $designation: String!
+    $salary: Float!
+    $date_of_joining: Date!
+    $department: String!
+    $employee_photo: String
+  ) {
+    addEmployee(
+      first_name: $first_name
+      last_name: $last_name
+      email: $email
+      gender: $gender
+      designation: $designation
+      salary: $salary
+      date_of_joining: $date_of_joining
+      department: $department
+      employee_photo: $employee_photo
+    ) { ${EMPLOYEE_FIELDS} }
+  }
+`;
+
+export interface AddEmployeeInput {
+  first_name: string;
+  last_name: string;
+  email: string;
+  gender: string;
+  designation: string;
+  salary: number;
+  date_of_joining: Date;
+  department: string;
+  employee_photo?: string;
+}
 
 @Injectable({ providedIn: 'root' })
 export class EmployeeService {
@@ -43,5 +83,14 @@ export class EmployeeService {
         fetchPolicy: 'network-only',
       })
       .pipe(map((res) => res.data!.getEmployees));
+  }
+
+  addEmployee(input: AddEmployeeInput) {
+    return this.apollo
+      .mutate<{ addEmployee: Employee }>({
+        mutation: ADD_EMPLOYEE,
+        variables: input,
+      })
+      .pipe(map((res) => res.data!.addEmployee));
   }
 }

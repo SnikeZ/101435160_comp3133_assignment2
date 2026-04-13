@@ -2,20 +2,17 @@
   <!-- Header -->
   <div class="flex items-center justify-between mb-6">
     <h1 class="text-3xl font-bold text-surface-900">Employee Management</h1>
-    <p-button
-      label="Logout"
-      icon="pi pi-sign-out"
-      severity="secondary"
-      (onClick)="logout()"
-    />
+    <div class="flex gap-2">
+      <p-button label="Add Employee" icon="pi pi-plus" (onClick)="openAddDialog()" />
+      <p-button label="Logout" icon="pi pi-sign-out" severity="secondary" (onClick)="logout()" />
+    </div>
   </div>
 
-  <!-- Error -->
   @if (error()) {
     <div class="mb-4 p-4 bg-red-100 text-red-700 rounded-lg">{{ error() }}</div>
   }
 
-  <!-- Table Card -->
+  <!-- Table -->
   <div class="card shadow-sm">
     <p-table
       [value]="employees()"
@@ -28,79 +25,158 @@
       styleClass="p-datatable-striped"
       #dt
     >
-      <ng-template #caption>
+      <ng-template pTemplate="caption">
         <div class="flex items-center justify-between">
           <span class="text-xl font-semibold">All Employees</span>
           <p-iconfield>
             <p-inputicon styleClass="pi pi-search" />
-            <input
-              pInputText
-              type="text"
-              placeholder="Search..."
-              (input)="dt.filterGlobal($any($event.target).value, 'contains')"
-            />
+            <input pInputText type="text" placeholder="Search..."
+              (input)="dt.filterGlobal($any($event.target).value, 'contains')" />
           </p-iconfield>
         </div>
       </ng-template>
 
-      <ng-template #header>
+      <ng-template pTemplate="header">
         <tr>
-          <th pSortableColumn="first_name">
-            First Name <p-sortIcon field="first_name" />
-          </th>
-          <th pSortableColumn="last_name">
-            Last Name <p-sortIcon field="last_name" />
-          </th>
-          <th pSortableColumn="email">
-            Email <p-sortIcon field="email" />
-          </th>
-          <th pSortableColumn="gender">
-            Gender <p-sortIcon field="gender" />
-          </th>
-          <th pSortableColumn="department">
-            Department <p-sortIcon field="department" />
-          </th>
-          <th pSortableColumn="designation">
-            Designation <p-sortIcon field="designation" />
-          </th>
-          <th pSortableColumn="salary">
-            Salary <p-sortIcon field="salary" />
-          </th>
-          <th pSortableColumn="date_of_joining">
-            Joined <p-sortIcon field="date_of_joining" />
-          </th>
+          <th>Photo</th>
+          <th pSortableColumn="first_name">First Name <p-sortIcon field="first_name" /></th>
+          <th pSortableColumn="last_name">Last Name <p-sortIcon field="last_name" /></th>
+          <th pSortableColumn="email">Email <p-sortIcon field="email" /></th>
+          <th pSortableColumn="gender">Gender <p-sortIcon field="gender" /></th>
+          <th pSortableColumn="department">Department <p-sortIcon field="department" /></th>
+          <th pSortableColumn="designation">Designation <p-sortIcon field="designation" /></th>
+          <th pSortableColumn="salary">Salary <p-sortIcon field="salary" /></th>
+          <th pSortableColumn="date_of_joining">Joined <p-sortIcon field="date_of_joining" /></th>
         </tr>
       </ng-template>
 
-      <ng-template #body let-employee>
+      <ng-template pTemplate="body" let-employee>
         <tr>
-          <td>{{ employee.first_name }}</td>
-          <td>{{ employee.last_name }}</td>
-          <td>{{ employee.email }}</td>
+          <td>
+            @if (employee.employee_photo) {
+              <img [src]="employee.employee_photo" class="w-10 h-10 rounded-full object-cover" />
+            } @else {
+              <div class="w-10 h-10 rounded-full bg-surface-200 flex items-center justify-center text-surface-500 text-sm font-medium">
+                {{ (employee.first_name?.[0] ?? '') + (employee.last_name?.[0] ?? '') }}
+              </div>
+            }
+          </td>
+          <td>{{ employee.first_name ?? '—' }}</td>
+          <td>{{ employee.last_name ?? '—' }}</td>
+          <td>{{ employee.email ?? '—' }}</td>
           <td>
             @if (employee.gender) {
-              <p-tag
-                [value]="employee.gender"
-                [severity]="employee.gender === 'Male' ? 'info' : employee.gender === 'Female' ? 'success' : 'secondary'"
-              />
+              <p-tag [value]="employee.gender"
+                [severity]="employee.gender === 'Male' ? 'info' : employee.gender === 'Female' ? 'success' : 'secondary'" />
             } @else {
               <span class="text-surface-400">—</span>
             }
           </td>
-          <td>{{ employee.department }}</td>
-          <td>{{ employee.designation }}</td>
+          <td>{{ employee.department ?? '—' }}</td>
+          <td>{{ employee.designation ?? '—' }}</td>
           <td>{{ employee.salary != null ? (employee.salary | currency) : '—' }}</td>
           <td>{{ employee.date_of_joining ? (employee.date_of_joining | date: 'mediumDate') : '—' }}</td>
         </tr>
       </ng-template>
 
-      <ng-template #emptymessage>
+      <ng-template pTemplate="emptymessage">
         <tr>
-          <td colspan="8" class="text-center py-8 text-surface-500">
-            No employees found.
-          </td>
+          <td colspan="9" class="text-center py-8 text-surface-500">No employees found.</td>
         </tr>
       </ng-template>
     </p-table>
   </div>
 </div>
+
+<!-- Add Employee Dialog -->
+<p-dialog
+  header="Add Employee"
+  [visible]="dialogVisible()"
+  (visibleChange)="dialogVisible.set($event)"
+  [modal]="true"
+  [style]="dialogStyle"
+  [draggable]="false"
+  [resizable]="false"
+  [footerTemplate]="dialogFooter"
+>
+  <form [formGroup]="form" class="grid grid-cols-2 gap-x-4 gap-y-5 pt-2">
+
+    <div class="flex flex-col gap-1">
+      <label class="text-sm font-medium">First Name <span class="text-red-500">*</span></label>
+      <input pInputText formControlName="first_name" placeholder="First name"
+        [invalid]="isInvalid('first_name')" />
+    </div>
+
+    <div class="flex flex-col gap-1">
+      <label class="text-sm font-medium">Last Name <span class="text-red-500">*</span></label>
+      <input pInputText formControlName="last_name" placeholder="Last name"
+        [invalid]="isInvalid('last_name')" />
+    </div>
+
+    <div class="flex flex-col gap-1 col-span-2">
+      <label class="text-sm font-medium">Email <span class="text-red-500">*</span></label>
+      <input pInputText formControlName="email" type="email" placeholder="Email address"
+        [invalid]="isInvalid('email')" />
+    </div>
+
+    <div class="flex flex-col gap-1">
+      <label class="text-sm font-medium">Gender <span class="text-red-500">*</span></label>
+      <p-select formControlName="gender" [options]="genderOptions"
+        optionLabel="label" optionValue="value" placeholder="Select gender"
+        [invalid]="isInvalid('gender')" styleClass="w-full" />
+    </div>
+
+    <div class="flex flex-col gap-1">
+      <label class="text-sm font-medium">Department <span class="text-red-500">*</span></label>
+      <input pInputText formControlName="department" placeholder="e.g. Engineering"
+        [invalid]="isInvalid('department')" />
+    </div>
+
+    <div class="flex flex-col gap-1">
+      <label class="text-sm font-medium">Designation <span class="text-sm font-medium">
+        <span class="text-red-500">*</span></span></label>
+      <input pInputText formControlName="designation" placeholder="e.g. Software Engineer"
+        [invalid]="isInvalid('designation')" />
+    </div>
+
+    <div class="flex flex-col gap-1">
+      <label class="text-sm font-medium">Salary <span class="text-red-500">*</span></label>
+      <p-inputnumber formControlName="salary" placeholder="Min $1,000"
+        [min]="1000" mode="currency" currency="USD"
+        [invalid]="isInvalid('salary')" styleClass="w-full" />
+    </div>
+
+    <div class="flex flex-col gap-1 col-span-2">
+      <label class="text-sm font-medium">Date of Joining <span class="text-red-500">*</span></label>
+      <p-datepicker formControlName="date_of_joining" [showIcon]="true"
+        placeholder="Select date" dateFormat="mm/dd/yy"
+        [invalid]="isInvalid('date_of_joining')" styleClass="w-full" />
+    </div>
+
+    <div class="flex flex-col gap-2 col-span-2">
+      <label class="text-sm font-medium">
+        Photo <span class="font-normal text-surface-400">(optional — stored as base64)</span>
+      </label>
+      <input type="file" accept="image/*" (change)="onImageSelect($event)"
+        class="text-sm text-surface-700 file:mr-3 file:py-1.5 file:px-3 file:rounded-md
+               file:border-0 file:text-sm file:font-medium file:bg-primary file:text-white
+               hover:file:opacity-90 cursor-pointer" />
+      @if (imagePreview()) {
+        <img [src]="imagePreview()!" alt="Preview"
+          class="w-24 h-24 rounded-lg object-cover border border-surface-200 mt-1" />
+      }
+    </div>
+
+    @if (formError()) {
+      <div class="col-span-2 p-3 bg-red-50 text-red-600 rounded-md text-sm">{{ formError() }}</div>
+    }
+
+  </form>
+</p-dialog>
+
+<ng-template #dialogFooter>
+  <div class="flex justify-end gap-2">
+    <p-button label="Cancel" severity="secondary" (onClick)="dialogVisible.set(false)" />
+    <p-button label="Add Employee" icon="pi pi-check" [loading]="submitting()" (onClick)="onSubmit()" />
+  </div>
+</ng-template>
