@@ -1,0 +1,106 @@
+<div class="min-h-screen bg-surface-50 p-6">
+  <!-- Header -->
+  <div class="flex items-center justify-between mb-6">
+    <h1 class="text-3xl font-bold text-surface-900">Employee Management</h1>
+    <p-button
+      label="Logout"
+      icon="pi pi-sign-out"
+      severity="secondary"
+      (onClick)="logout()"
+    />
+  </div>
+
+  <!-- Error -->
+  @if (error()) {
+    <div class="mb-4 p-4 bg-red-100 text-red-700 rounded-lg">{{ error() }}</div>
+  }
+
+  <!-- Table Card -->
+  <div class="card shadow-sm">
+    <p-table
+      [value]="employees()"
+      [loading]="loading()"
+      [paginator]="true"
+      [rows]="10"
+      [rowsPerPageOptions]="[10, 25, 50]"
+      [globalFilterFields]="['first_name', 'last_name', 'email', 'department', 'designation']"
+      dataKey="id"
+      styleClass="p-datatable-striped"
+      #dt
+    >
+      <ng-template #caption>
+        <div class="flex items-center justify-between">
+          <span class="text-xl font-semibold">All Employees</span>
+          <p-iconfield>
+            <p-inputicon styleClass="pi pi-search" />
+            <input
+              pInputText
+              type="text"
+              placeholder="Search..."
+              (input)="dt.filterGlobal($any($event.target).value, 'contains')"
+            />
+          </p-iconfield>
+        </div>
+      </ng-template>
+
+      <ng-template #header>
+        <tr>
+          <th pSortableColumn="first_name">
+            First Name <p-sortIcon field="first_name" />
+          </th>
+          <th pSortableColumn="last_name">
+            Last Name <p-sortIcon field="last_name" />
+          </th>
+          <th pSortableColumn="email">
+            Email <p-sortIcon field="email" />
+          </th>
+          <th pSortableColumn="gender">
+            Gender <p-sortIcon field="gender" />
+          </th>
+          <th pSortableColumn="department">
+            Department <p-sortIcon field="department" />
+          </th>
+          <th pSortableColumn="designation">
+            Designation <p-sortIcon field="designation" />
+          </th>
+          <th pSortableColumn="salary">
+            Salary <p-sortIcon field="salary" />
+          </th>
+          <th pSortableColumn="date_of_joining">
+            Joined <p-sortIcon field="date_of_joining" />
+          </th>
+        </tr>
+      </ng-template>
+
+      <ng-template #body let-employee>
+        <tr>
+          <td>{{ employee.first_name }}</td>
+          <td>{{ employee.last_name }}</td>
+          <td>{{ employee.email }}</td>
+          <td>
+            @if (employee.gender) {
+              <p-tag
+                [value]="employee.gender"
+                [severity]="employee.gender === 'Male' ? 'info' : employee.gender === 'Female' ? 'success' : 'secondary'"
+              />
+            } @else {
+              <span class="text-surface-400">—</span>
+            }
+          </td>
+          <td>{{ employee.department }}</td>
+          <td>{{ employee.designation }}</td>
+          <td>{{ employee.salary != null ? (employee.salary | currency) : '—' }}</td>
+          <td>{{ employee.date_of_joining ? (employee.date_of_joining | date: 'mediumDate') : '—' }}</td>
+        </tr>
+      </ng-template>
+
+      <ng-template #emptymessage>
+        <tr>
+          <td colspan="8" class="text-center py-8 text-surface-500">
+            No employees found.
+          </td>
+        </tr>
+      </ng-template>
+    </p-table>
+  </div>
+</div>
